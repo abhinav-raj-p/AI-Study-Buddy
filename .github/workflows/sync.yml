@@ -15,4 +15,4 @@ jobs:
       - name: Push to hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: git push --force https://abhinav-raj-p:$HF_TOKEN@huggingface.co/spaces/abhinav-raj-p/Ai-study-buddy main
+        run: git push --force https://abhinav-raj-p:${{ secrets.HF_TOKEN }}@huggingface.co/spaces/abhinav-raj-p/Ai-study-buddy main
