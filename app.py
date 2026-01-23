@@ -34,8 +34,10 @@ def call_ai(prompt, system_message="You are a helpful academic tutor who explain
     
     try:
         client = InferenceClient(api_key=hf_token)
-        # Using Mistral 7B - perfect for instruction following
-        model_id = "mistralai/Mistral-7B-Instruct-v0.3"
+        
+        # --- UPDATE THIS LINE ---
+        # Llama 3.2 is very reliable for the Chat Completion API
+        model_id = "meta-llama/Llama-3.2-3B-Instruct" 
         
         response = client.chat.completions.create(
             model=model_id,
@@ -47,6 +49,8 @@ def call_ai(prompt, system_message="You are a helpful academic tutor who explain
         )
         return response.choices[0].message.content
     except Exception as e:
+        # If Llama is busy, you can try Qwen as a backup:
+        # model_id = "Qwen/Qwen2.5-7B-Instruct"
         st.error(f"AI Error: {e}")
         return None
 
