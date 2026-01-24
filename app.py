@@ -6,8 +6,8 @@ import io
 # --- Page Config ---
 st.set_page_config(page_title="AI Study Buddy", page_icon="📖", layout="wide")
 
-# --- Token Management (The "Pro" Way) ---
-# This looks for the secret in your Hugging Face Space Settings
+
+
 try:
     hf_token = st.secrets["HF_TOKEN"]
 except Exception:
@@ -35,8 +35,7 @@ def call_ai(prompt, system_message="You are a helpful academic tutor who explain
     try:
         client = InferenceClient(api_key=hf_token)
         
-        # --- UPDATE THIS LINE ---
-        # Llama 3.2 is very reliable for the Chat Completion API
+
         model_id = "meta-llama/Llama-3.2-3B-Instruct" 
         
         response = client.chat.completions.create(
@@ -49,8 +48,8 @@ def call_ai(prompt, system_message="You are a helpful academic tutor who explain
         )
         return response.choices[0].message.content
     except Exception as e:
-        # If Llama is busy, you can try Qwen as a backup:
-        # model_id = "Qwen/Qwen2.5-7B-Instruct"
+        # If Llama is busy, we will try Qwen as a backup:
+        
         st.error(f"AI Error: {e}")
         return None
 
@@ -100,7 +99,7 @@ with tab2:
         with col1:
             if st.button("Summarize Notes"):
                 with st.spinner("Summarizing into bullets..."):
-                    # Use a slice to stay within model limits
+                    # Using a slice to stay within model limits
                     context = st.session_state.pdf_text[:4000]
                     summary = call_ai(f"Summarize these notes into clear bullet points: {context}")
                     if summary:
@@ -132,7 +131,7 @@ with tab3:
                     st.markdown("### 🃏 Your Flashcards")
                     st.write(cards)
                     
-                    # Add a download button for the student
+                    # Added a download button for the student
                     st.download_button(
                         label="📥 Download Flashcards",
                         data=cards,
