@@ -1,13 +1,56 @@
 import streamlit as st
 from huggingface_hub import InferenceClient
 import PyPDF2
-import io
 
 # --- Page Config ---
-st.set_page_config(page_title="AI Study Buddy", page_icon="📖", layout="wide")
+st.set_page_config(
+    page_title="AI Study Buddy", 
+    page_icon="🎓", 
+    layout="wide",
+)
 
+# --- Mobile-Responsive CSS ---
+st.markdown("""
+    <style>
+    /* Main background */
+    .stApp {
+        background-color: #fcfcfc;
+    }
+    
+    /* Responsive adjustment for mobile */
+    @media (max-width: 640px) {
+        .main .block-container {
+            padding: 1rem 1rem;
+        }
+        h1 {
+            font-size: 1.8rem !important;
+        }
+    }
 
+    /* Buttons styling */
+    .stButton>button {
+        width: 100%;
+        border-radius: 12px;
+        padding: 0.5rem;
+        background-color: #4A90E2;
+        color: white;
+        border: none;
+        transition: 0.3s;
+    }
+    
+    /* Card-like containers for mobile */
+    .css-1r6slb0, .stVerticalBlock {
+        gap: 1.5rem;
+    }
+    
+    /* Hide Sidebar on mobile by default */
+    [data-testid="sidebarNavView"] {
+        background-color: #f0f2f6;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
+# --- Token Management ---
 try:
     hf_token = st.secrets["HF_TOKEN"]
 except Exception:
@@ -17,27 +60,19 @@ except Exception:
 def extract_text(pdf_file):
     try:
         reader = PyPDF2.PdfReader(pdf_file)
-        text = ""
-        for page in reader.pages:
-            extracted = page.extract_text()
-            if extracted:
-                text += extracted
+        text = "".join([page.extract_text() or "" for page in reader.pages])
         return text
     except Exception as e:
-        st.error(f"Error reading PDF: {e}")
+        st.error(f"Error: {e}")
         return ""
 
-def call_ai(prompt, system_message="You are a helpful academic tutor who explains things clearly."):
+def call_ai(prompt, system_message="You are a brilliant academic tutor."):
     if not hf_token:
-        st.error("HF_TOKEN missing! Please add it to your Space Secrets in Settings.")
+        st.error("Missing HF_TOKEN")
         return None
-    
     try:
         client = InferenceClient(api_key=hf_token)
-        
-
         model_id = "meta-llama/Llama-3.2-3B-Instruct" 
-        
         response = client.chat.completions.create(
             model=model_id,
             messages=[
@@ -48,95 +83,70 @@ def call_ai(prompt, system_message="You are a helpful academic tutor who explain
         )
         return response.choices[0].message.content
     except Exception as e:
-        # If Llama is busy, we will try Qwen as a backup:
-        
         st.error(f"AI Error: {e}")
         return None
 
-# --- Sidebar UI ---
-with st.sidebar:
-    st.title("📖 Study Settings")
-    st.markdown("---")
-    st.info("Your AI Study Buddy uses Mistral-7B to help you ace your exams.")
-    if not hf_token:
-        st.warning("⚠️ Secrets not configured.")
-    else:
-        st.success("✅ AI Engine Connected")
+# --- Header Section ---
+st.title("🎓 AI Study Buddy")
+st.caption("Simplified Learning | PDF Analysis | Flashcards")
 
-# --- Main App Title ---
-st.title("📖 AI-Powered Study Buddy")
-st.markdown("Upload notes, simplify concepts, and generate study materials instantly.")
-
-# --- Main Tabs ---
-tab1, tab2, tab3 = st.tabs(["💬 Chat & Simplify", "📄 PDF Summarizer", "🃏 Flashcards"])
+# --- Tabs ---
+tab1, tab2, tab3 = st.tabs(["💬 Explain", "📄 Analyze", "🃏 Flashcards"])
 
 with tab1:
-    st.header("Ask a Question")
-    user_query = st.text_input("Paste a complex concept (e.g., 'What is Cache Coherence?'):")
-    if st.button("Explain Simply", key="simplify_btn"):
+    st.markdown("### 💡 Concept Explainer")
+    user_query = st.text_input("What is confusing you?", placeholder="e.g. Backpropagation")
+    
+    if st.button("🚀 Explain for Mobile"):
         if user_query:
-            with st.spinner("Simplifying for you..."):
-                ans = call_ai(f"Explain this concept in simple terms for a student with analogies: {user_query}")
+            with st.spinner("🧠 Thinking..."):
+                ans = call_ai(f"Explain simply with a daily life analogy: {user_query}")
                 if ans:
-                    st.markdown("### 💡 Explanation")
-                    st.info(ans)
-        else:
-            st.warning("Please enter a question first!")
+                    st.success("Here is your explanation:")
+                    st.write(ans)
 
 with tab2:
-    st.header("PDF Notes Analysis")
-    uploaded_file = st.file_uploader("Upload your lecture notes", type="pdf")
+    st.markdown("### 📄 Document Analysis")
+    uploaded_file = st.file_uploader("Upload Notes", type="pdf")
     
     if uploaded_file:
-        # Cache the extraction so it doesn't re-run every click
         if 'pdf_text' not in st.session_state:
-            with st.spinner("Extracting text..."):
-                st.session_state.pdf_text = extract_text(uploaded_file)
+            st.session_state.pdf_text = extract_text(uploaded_file)
         
-        st.success("PDF Content Loaded!")
+        st.success("✅ File Ready")
+
+        # Layout shifts: Side-by-side on PC, Stacked on Mobile
+        col1, col2 = st.columns([1, 1])
         
-        col1, col2 = st.columns(2)
         with col1:
-            if st.button("Summarize Notes"):
-                with st.spinner("Summarizing into bullets..."):
-                    # Using a slice to stay within model limits
-                    context = st.session_state.pdf_text[:4000]
-                    summary = call_ai(f"Summarize these notes into clear bullet points: {context}")
-                    if summary:
-                        st.markdown("### 📝 Summary")
-                        st.write(summary)
+            if st.button("📝 Summarize"):
+                with st.spinner("Summarizing..."):
+                    summary = call_ai(f"Summary of: {st.session_state.pdf_text[:4000]}")
+                    st.markdown(summary)
         
         with col2:
-            question = st.text_input("Ask a specific question about these notes:")
-            if st.button("Search PDF"):
-                if question:
-                    with st.spinner("Searching..."):
-                        context = st.session_state.pdf_text[:4000]
-                        ans = call_ai(f"Based ONLY on these notes: {context}, answer this question: {question}")
-                        if ans:
-                            st.markdown("### 🔍 Answer")
-                            st.write(ans)
-                else:
-                    st.warning("Enter a question about the PDF.")
+            q = st.text_input("Ask about PDF:")
+            if st.button("🔍 Search"):
+                with st.spinner("Finding..."):
+                    ans = call_ai(f"Context: {st.session_state.pdf_text[:4000]} Query: {q}")
+                    st.info(ans)
 
 with tab3:
-    st.header("Flashcard Generator")
+    st.markdown("### 🃏 Quiz Generator")
     if 'pdf_text' in st.session_state:
-        if st.button("Generate 5 Flashcards"):
-            with st.spinner("Creating study cards..."):
-                context = st.session_state.pdf_text[:4000]
-                cards = call_ai(f"Create 5 Flashcard questions and answers (Front/Back style) from these notes: {context}")
-                if cards:
-                    st.session_state.generated_cards = cards
-                    st.markdown("### 🃏 Your Flashcards")
-                    st.write(cards)
-                    
-                    # Added a download button for the student
-                    st.download_button(
-                        label="📥 Download Flashcards",
-                        data=cards,
-                        file_name="flashcards.txt",
-                        mime="text/plain"
-                    )
+        if st.button("🎯 Generate Set"):
+            with st.spinner("Generating..."):
+                cards = call_ai(f"Create 5 flashcards from: {st.session_state.pdf_text[:4000]}")
+                st.write(cards)
+                st.download_button("📥 Save to Phone", cards, "flashcards.txt")
     else:
-        st.warning("⚠️ Please upload a PDF in the 'PDF Summarizer' tab first.")
+        st.warning("Upload a PDF first.")
+
+# --- Sidebar ---
+with st.sidebar:
+    st.title("Settings")
+    st.write("Current Model: Llama 3.2")
+    if hf_token:
+        st.success("Connected")
+    else:
+        st.error("Token Missing")
