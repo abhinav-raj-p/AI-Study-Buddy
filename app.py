@@ -6,7 +6,7 @@ import io
 # --- Page Config ---
 st.set_page_config(page_title="AI Study Buddy", page_icon="📖", layout="wide")
 
-
+#secret key
 
 try:
     hf_token = st.secrets["HF_TOKEN"]
