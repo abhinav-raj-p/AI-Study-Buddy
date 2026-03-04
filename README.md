@@ -31,3 +31,5 @@ An intelligent study companion designed to help students understand complex conc
    git clone [https://github.com/abhinav-raj-p/AI-Study-Buddy.git](https://github.com/abhinav-raj-p/AI-Study-Buddy.git)
 
 ## 🌐 [Live Demo on Hugging Face](https://abhinav-raj-p-ai-study-buddy.hf.space)
+
+Future Enhancements will be done
